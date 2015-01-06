@@ -2,19 +2,97 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"os/exec"
+	"strings"
+
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
-	"net/http"
+	"github.com/unrolled/render"
 )
 
+var (
+	commands         Commands
+	commandsFilename = "commands.json"
+)
+
+func init() {
+	commands = readCommands(commandsFilename)
+}
+
 func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "It's a ducking ninja!")
+	r := render.New(render.Options{
+		IndentJSON: true,
 	})
 
-	n := negroni.Classic()
-	n.UseHandler(router)
+	mux := mux.NewRouter()
+	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		r.Data(w, http.StatusOK, []byte("It's a ducking ninja!"))
+	})
 
-	n.Run(":3000")
+	mux.HandleFunc("/logs", ShowLogs(r)).Methods("GET")
+	mux.HandleFunc("/commands", ListCommands(r)).Methods("GET")
+	mux.HandleFunc("/do/{command}", ExecuteCommand(r)).Methods("GET")
+
+	n := negroni.Classic()
+	n.UseHandler(mux)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3333"
+	}
+	n.Run(":" + port)
+}
+
+func ShowLogs(r *render.Render) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// TODO: show logs here.. last x entries
+	}
+}
+
+func ListCommands(r *render.Render) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		r.JSON(w, http.StatusOK, commands)
+	}
+}
+
+type CommandResponse struct {
+	Id      string
+	Command string
+	Output  []string
+	Error   string
+}
+
+func ExecuteCommand(r *render.Render) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		id := mux.Vars(req)["command"]
+
+		// check if valid command
+		if command, found := commands[id]; found {
+			cmd := strings.Split(command, " ")
+			output, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
+			if err != nil {
+				r.JSON(w, http.StatusInternalServerError,
+					CommandResponse{
+						Id:      id,
+						Command: command,
+						Error:   fmt.Sprint(err),
+					})
+				return
+			}
+			r.JSON(w, http.StatusOK,
+				CommandResponse{
+					Id:      id,
+					Command: command,
+					Output:  strings.Split(string(output), "\n"),
+				})
+			return
+		}
+		r.JSON(w, http.StatusBadRequest,
+			CommandResponse{
+				Id:    id,
+				Error: "Unknown command!",
+			})
+	}
 }

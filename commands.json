@@ -1,0 +1,6 @@
+{
+    "ls": "ls -l",
+    "vpn-start": "systemctl start pptpd.service",
+    "vpn-stop": "systemctl stop pptpd.service",
+    "vpn-status": "systemctl status pptpd.service"
+}
