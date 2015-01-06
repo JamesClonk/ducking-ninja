@@ -25,3 +25,7 @@ _testmain.go
 
 # bin
 ducking-ninja
+
+# vendor
+.vendor
+
