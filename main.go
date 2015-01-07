@@ -13,13 +13,9 @@ import (
 )
 
 var (
-	commands         Commands
 	commandsFilename = "commands.json"
+	authFilename     = "auth.json"
 )
-
-func init() {
-	commands = readCommands(commandsFilename)
-}
 
 func main() {
 	r := render.New(render.Options{
@@ -28,14 +24,17 @@ func main() {
 
 	mux := mux.NewRouter()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		r.Data(w, http.StatusOK, []byte("It's a ducking ninja!"))
+		r.JSON(w, http.StatusOK, "It's a ducking ninja!")
 	})
 
 	mux.HandleFunc("/logs", ShowLogs(r)).Methods("GET")
-	mux.HandleFunc("/commands", ListCommands(r)).Methods("GET")
-	mux.HandleFunc("/do/{command}", ExecuteCommand(r)).Methods("GET")
+
+	commands := readCommands(commandsFilename)
+	mux.HandleFunc("/commands", ListCommands(r, commands)).Methods("GET")
+	mux.HandleFunc("/do/{command}", ExecuteCommand(r, commands)).Methods("GET")
 
 	n := negroni.Classic()
+	n.Use(authenticate(r, readAuth(authFilename)))
 	n.UseHandler(mux)
 
 	port := os.Getenv("PORT")
@@ -51,7 +50,7 @@ func ShowLogs(r *render.Render) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func ListCommands(r *render.Render) func(http.ResponseWriter, *http.Request) {
+func ListCommands(r *render.Render, commands Commands) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		r.JSON(w, http.StatusOK, commands)
 	}
@@ -64,7 +63,7 @@ type CommandResponse struct {
 	Error   string
 }
 
-func ExecuteCommand(r *render.Render) func(http.ResponseWriter, *http.Request) {
+func ExecuteCommand(r *render.Render, commands Commands) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		id := mux.Vars(req)["command"]
 
@@ -77,6 +76,7 @@ func ExecuteCommand(r *render.Render) func(http.ResponseWriter, *http.Request) {
 					CommandResponse{
 						Id:      id,
 						Command: command,
+						Output:  strings.Split(string(output), "\n"),
 						Error:   fmt.Sprint(err),
 					})
 				return

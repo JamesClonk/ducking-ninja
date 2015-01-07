@@ -47,7 +47,7 @@ HotReloadRecursive Yes
 #
 # Default:
 #  HotReloadWatchExtensions go
-HotReloadWatchExtensions go,html
+HotReloadWatchExtensions go,html,json
 
 # Goplay directory for storing created binary files
 #
