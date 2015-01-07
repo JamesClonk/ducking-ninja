@@ -47,7 +47,7 @@ func main() {
 
 func ShowLogs(r *render.Render) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		// TODO: show logs here.. last x entries
+		r.JSON(w, http.StatusOK, getLogs())
 	}
 }
 
