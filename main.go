@@ -35,6 +35,7 @@ func main() {
 
 	n := negroni.Classic()
 	n.Use(authenticate(r, readAuth(authFilename)))
+	n.Use(logger())
 	n.UseHandler(mux)
 
 	port := os.Getenv("PORT")
