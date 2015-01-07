@@ -29,3 +29,5 @@ ducking-ninja
 # vendor
 .vendor
 
+# logs
+logs

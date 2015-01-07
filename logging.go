@@ -4,27 +4,35 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/cihub/seelog"
 	"github.com/codegangsta/negroni"
 )
 
-var (
-	logFilename = "ducking-ninja.log"
-)
-
 func init() {
-	log.SetOutput(w)
+	testConfig := `
+<seelog>
+	<formats>
+		<format id="ducking-ninja" format="%Date %Time;%Msg%n"/>
+	</formats>
+	<outputs formatid="ducking-ninja">
+		<rollingfile type="size" filename="./logs/ducking-ninja.log" maxsize="1048576" maxrolls="10" />
+	</outputs>
+</seelog>
+`
+	logger, err := seelog.LoggerFromConfigAsString(testConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	seelog.ReplaceLogger(logger)
 }
 
-func logger() negroni.HandlerFunc {
+func logging() negroni.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-		addr := req.Header.Get("X-Real-IP")
-		if addr == "" {
-			addr = req.Header.Get("X-Forwarded-For")
-			if addr == "" {
-				addr = req.RemoteAddr
-			}
+		haddr := req.Header.Get("X-Real-IP")
+		if haddr == "" {
+			haddr = req.Header.Get("X-Forwarded-For")
 		}
-		log.Printf(";Request;%v;%v;%v", req.Method, req.URL.Path, addr)
+		seelog.Infof("%v;%v;%v;%v", req.Method, req.URL.Path, req.RemoteAddr, haddr)
 		next(w, req)
 	}
 }
