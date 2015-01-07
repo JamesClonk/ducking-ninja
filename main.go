@@ -22,21 +22,26 @@ func main() {
 		IndentJSON: true,
 	})
 
-	mux := mux.NewRouter()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	router := mux.NewRouter()
+	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		r.JSON(w, http.StatusOK, "It's a ducking ninja!")
 	})
+	router.HandleFunc("/logs", ShowLogs(r)).Methods("GET")
 
-	mux.HandleFunc("/logs", ShowLogs(r)).Methods("GET")
-
+	loggedRouter := mux.NewRouter()
 	commands := readCommands(commandsFilename)
-	mux.HandleFunc("/commands", ListCommands(r, commands)).Methods("GET")
-	mux.HandleFunc("/do/{command}", ExecuteCommand(r, commands)).Methods("GET")
+	loggedRouter.HandleFunc("/commands", ListCommands(r, commands)).Methods("GET")
+	loggedRouter.HandleFunc("/do/{command}", ExecuteCommand(r, commands)).Methods("GET")
+
+	// run logging middleware only for loggedRouter
+	router.PathPrefix("/").Handler(negroni.New(
+		logging(),
+		negroni.Wrap(loggedRouter),
+	))
 
 	n := negroni.Classic()
 	n.Use(authenticate(r, readAuth(authFilename)))
-	n.Use(logging())
-	n.UseHandler(mux)
+	n.UseHandler(router)
 
 	port := os.Getenv("PORT")
 	if port == "" {
