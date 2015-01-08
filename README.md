@@ -13,8 +13,9 @@ a remote command execution webservice/app, written in [Go](https://golang.org/).
 
 ### Usage
 
-1. `cd $GOPATH/JamesClonk/ducking-ninja`
-2. `./ducking-ninja`
+1. `git clone http://github.com/JamesClonk/ducking-ninja.git`
+2. `cd ducking-ninja`
+3. `./ducking-ninja`
 
 =============
 *disclaimer: name suggested by github ;)*
