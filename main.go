@@ -20,26 +20,48 @@ var (
 func main() {
 	r := render.New(render.Options{
 		IndentJSON: true,
+		Layout:     "layout",
+		Extensions: []string{".html"},
 	})
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		r.JSON(w, http.StatusOK, "It's a ducking ninja!")
 	})
-	router.HandleFunc("/logs", ShowLogs(r)).Methods("GET")
+
+	router.HandleFunc("/web/", func(w http.ResponseWriter, req *http.Request) {
+		r.HTML(w, http.StatusOK, "index", nil)
+	})
+	router.HandleFunc("/web/logs", func(w http.ResponseWriter, req *http.Request) {
+		r.HTML(w, http.StatusOK, "logs", nil)
+	})
+	router.HandleFunc("/web/commands", func(w http.ResponseWriter, req *http.Request) {
+		r.HTML(w, http.StatusOK, "commands", nil)
+	})
+
+	router.HandleFunc("/api/logs", ShowLogs(r)).Methods("GET")
 
 	loggedRouter := mux.NewRouter()
 	commands := readCommands(commandsFilename)
-	loggedRouter.HandleFunc("/commands", ListCommands(r, commands)).Methods("GET")
-	loggedRouter.HandleFunc("/do/{command}", ExecuteCommand(r, commands)).Methods("GET")
+	loggedRouter.HandleFunc("/api/commands", ListCommands(r, commands)).Methods("GET")
+	loggedRouter.HandleFunc("/api/do/{command}", ExecuteCommand(r, commands)).Methods("GET")
 
 	// run logging middleware only for loggedRouter
-	router.PathPrefix("/").Handler(negroni.New(
+	router.PathPrefix("/api").Handler(negroni.New(
 		logging(),
 		negroni.Wrap(loggedRouter),
 	))
 
-	n := negroni.Classic()
+	//n := negroni.Classic()
+	n := negroni.New(
+		negroni.NewRecovery(),
+		negroni.NewLogger(),
+		&negroni.Static{
+			Dir:       http.Dir("assets"),
+			Prefix:    "/web",
+			IndexFile: "index.html",
+		},
+	)
 	n.Use(authenticate(r, readAuth(authFilename)))
 	n.UseHandler(router)
 
