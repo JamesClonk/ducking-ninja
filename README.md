@@ -13,7 +13,7 @@ a remote command execution webservice/app, written in [Go](https://golang.org/).
 
 ### Usage
 
-1. `git clone http://github.com/JamesClonk/ducking-ninja.git`
+1. `git clone https://github.com/JamesClonk/ducking-ninja.git`
 2. `cd ducking-ninja`
 3. `./ducking-ninja`
 
