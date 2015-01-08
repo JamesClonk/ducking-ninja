@@ -1,0 +1,11 @@
+{{ with .Data }}
+<div class="page-header">
+    <h2>{{ .Id }}&nbsp;&nbsp;<span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>&nbsp;&nbsp;{{ .Command }}</h2>
+</div>
+
+<div>
+    <pre>{{ range .Output }}
+{{ . }}{{ end }}</pre>
+    <pre>{{ .Error }}</pre>
+</div>
+{{ end }}

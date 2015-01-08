@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/unrolled/render"
 )
 
@@ -37,6 +39,29 @@ func WebListCommands(r *render.Render, commands Commands) func(http.ResponseWrit
 
 func WebExecuteCommand(r *render.Render, commands Commands) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		r.HTML(w, http.StatusOK, "execute", &Page{Active: "Commands"})
+		id := mux.Vars(req)["command"]
+		command, output, err := executeCommand(id, commands)
+		if err != nil {
+			r.HTML(w, http.StatusOK, "execute",
+				&Page{
+					Active: "Commands",
+					Data: &CommandResponse{
+						Id:      id,
+						Command: command,
+						Output:  strings.Split(output, "\n"),
+						Error:   fmt.Sprint(err),
+					},
+				})
+			return
+		}
+		r.HTML(w, http.StatusOK, "execute",
+			&Page{
+				Active: "Commands",
+				Data: &CommandResponse{
+					Id:      id,
+					Command: command,
+					Output:  strings.Split(output, "\n"),
+				},
+			})
 	}
 }

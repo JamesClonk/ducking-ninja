@@ -12,7 +12,9 @@
     <tbody>
         {{ range $key, $value := .Data }}
         <tr>
-            <td> {{ $key }} </td>
+            <td>
+                <a href="/web/do/{{ $key }}">{{ $key }}</a>
+            </td>
             <td> {{ $value }} </td>
         </tr>
         {{ end }}

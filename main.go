@@ -25,27 +25,24 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		http.Redirect(w, req, "web/", http.StatusMovedPermanently)
+		http.Redirect(w, req, "/web/", http.StatusMovedPermanently)
 	})
-
 	router.HandleFunc("/web/", WebIndex(r))
 	router.HandleFunc("/web/logs", WebShowLogs(r))
-	router.HandleFunc("/web/commands", WebListCommands(r, commands))
-	router.HandleFunc("/web/do/{command}", WebExecuteCommand(r, commands))
-
 	router.HandleFunc("/api/logs", ApiShowLogs(r)).Methods("GET")
 
 	loggedRouter := mux.NewRouter()
+	loggedRouter.HandleFunc("/web/commands", WebListCommands(r, commands))
+	loggedRouter.HandleFunc("/web/do/{command}", WebExecuteCommand(r, commands))
 	loggedRouter.HandleFunc("/api/commands", ApiListCommands(r, commands)).Methods("GET")
 	loggedRouter.HandleFunc("/api/do/{command}", ApiExecuteCommand(r, commands)).Methods("GET")
 
 	// run logging middleware only for loggedRouter
-	router.PathPrefix("/api").Handler(negroni.New(
+	router.PathPrefix("/").Handler(negroni.New(
 		logging(),
 		negroni.Wrap(loggedRouter),
 	))
 
-	//n := negroni.Classic()
 	n := negroni.New(
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
