@@ -17,6 +17,11 @@ var (
 	authFilename     = "auth.json"
 )
 
+type Page struct {
+	Active string
+	Output string
+}
+
 func main() {
 	r := render.New(render.Options{
 		IndentJSON: true,
@@ -30,13 +35,13 @@ func main() {
 	})
 
 	router.HandleFunc("/web/", func(w http.ResponseWriter, req *http.Request) {
-		r.HTML(w, http.StatusOK, "index", nil)
+		r.HTML(w, http.StatusOK, "index", &Page{Active: "Home"})
 	})
 	router.HandleFunc("/web/logs", func(w http.ResponseWriter, req *http.Request) {
-		r.HTML(w, http.StatusOK, "logs", nil)
+		r.HTML(w, http.StatusOK, "logs", &Page{Active: "Logs"})
 	})
 	router.HandleFunc("/web/commands", func(w http.ResponseWriter, req *http.Request) {
-		r.HTML(w, http.StatusOK, "commands", nil)
+		r.HTML(w, http.StatusOK, "commands", &Page{Active: "Commands"})
 	})
 
 	router.HandleFunc("/api/logs", ShowLogs(r)).Methods("GET")
