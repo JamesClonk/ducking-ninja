@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -12,6 +13,7 @@ import (
 var (
 	commandsFilename = "commands.json"
 	authFilename     = "auth.json"
+	logger           = log.New(os.Stdout, "[ducking-ninja] ", 0)
 )
 
 func main() {
@@ -45,13 +47,14 @@ func main() {
 
 	n := negroni.New(
 		negroni.NewRecovery(),
-		negroni.NewLogger(),
+		&negroni.Logger{logger},
 		&negroni.Static{
 			Dir:       http.Dir("assets"),
 			Prefix:    "/web",
 			IndexFile: "index.html",
 		},
 	)
+
 	n.Use(authenticate(r, readAuth(authFilename)))
 	n.UseHandler(router)
 
@@ -59,5 +62,8 @@ func main() {
 	if port == "" {
 		port = "3333"
 	}
-	n.Run(":" + port)
+	addr := ":" + port
+
+	logger.Printf("listening on %s", addr)
+	logger.Fatal(http.ListenAndServe(addr, n))
 }
